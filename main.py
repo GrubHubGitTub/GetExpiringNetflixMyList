@@ -21,6 +21,8 @@ pw = os.getenv("pw")
 user_profile = os.getenv("user_profile")
 # enter your rapid api key (it's free)
 api_key = os.getenv("api_key")
+# Change your country code (see readme for list of countries)
+country = "425"
 
 
 def install(package):
@@ -89,7 +91,7 @@ def get_my_list():
 def get_expiring_movies():
     url = "https://unogsng.p.rapidapi.com/expiring"
     # CHANGE COUNTRY TO YOUR ID FROM API
-    querystring = {"countrylist":"425"}
+    querystring = {"countrylist":country}
 
     headers = {
         'x-rapidapi-host': "unogsng.p.rapidapi.com",
