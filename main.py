@@ -3,21 +3,37 @@ import selenium as s
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium import webdriver
 from time import sleep
+import os
+import subprocess
+import sys
+# delete this or change the path to load your own .env file (pip install python-dotenv)
+from dotenv import load_dotenv
+load_dotenv("C:/New/.env")
+#-------------------------------------
 
 # enter your Netflix email/phone number
-email = ""
-# enter your Netflix PW
-pw = ""
+email = os.getenv("email")
+# enter your Netflix password
+pw = os.getenv("pw")
 # enter your profile name exactly as it appears on Netflix
-user_profile = ""
+user_profile = os.getenv("user_profile")
+# enter your rapid api key (it's free)
+api_key = os.getenv("api_key")
+
+
+def install(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+install("webdriver-manager")
+from webdriver_manager.chrome import ChromeDriverManager
 
 def get_my_list():
     # selenium setup- change path to your webdriver
-    chrome_driver = "C:/Program Files (x86)/chromedriver_win32/chromedriver.exe"
     op = s.webdriver.ChromeOptions()
     op.add_argument('headless')
-    driver = s.webdriver.Chrome(executable_path=chrome_driver, options=op)
+    driver = webdriver.Chrome(ChromeDriverManager().install(), options=op)
 
     # go to netflix
     print("Going to Netflix...")
@@ -67,11 +83,7 @@ def get_my_list():
 
     # return list of movies:
     movies_div = driver.find_elements_by_class_name("title-card")
-    movie_titles = []
-    for movie in movies_div:
-        raw_title = movie.find_element_by_css_selector('a')
-        title = raw_title.get_attribute("aria-label")
-        movie_titles.append(title)
+    movie_titles = [div.find_element_by_css_selector('a').get_attribute("aria-label") for div in movies_div]
     return movie_titles
 
 def get_expiring_movies():
@@ -82,28 +94,27 @@ def get_expiring_movies():
     headers = {
         'x-rapidapi-host': "unogsng.p.rapidapi.com",
         # GET YOUR OWN KEY FOOL
-        'x-rapidapi-key': ""
+        'x-rapidapi-key': api_key
         }
     response = requests.request("GET", url, headers=headers, params=querystring)
 
     data = response.json()
     movie_dicts = data["results"]
-    expiring_movies = {}
-    for dic in movie_dicts:
-        expiry_date = dic["expiredate"]
-        movie = dic["title"]
-        expiring_movies[movie] = expiry_date
+    expiring_movies = {movie["title"]:movie["expiredate"] for movie in movie_dicts}
     return expiring_movies
 
 my_list = get_my_list()
 expiring_movies = get_expiring_movies()
 
 my_expiring_movies = {}
-for key in expiring_movies:
-    if key in my_list:
-        my_expiring_movies[key] = expiring_movies[key]
+for movie in expiring_movies:
+    if movie in my_list:
+        my_expiring_movies[movie] = expiring_movies[movie]
 
-print(my_expiring_movies)
+if len(my_expiring_movies) > 0:
+    print(my_expiring_movies)
+else:
+    print("Lucky you! Nothing is about to expire. Check back in a week.")
 
 
 
